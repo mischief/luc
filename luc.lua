@@ -46,35 +46,6 @@ commands.help = function(target, from)
   s:sendChat(target, from .. ": commands: " .. table.concat(c, ", "))
 end
 
--- run some lua code in a sandbox
-commands.eval = function(target, from, code)
-    code = code:gsub("^=", "return ")
-    local fn, err = loadstring(code)
-    if not fn then
-      s:sendChat(target, from .. ": Error loading code: " .. code .. err:match(".*(:.-)$"))
-      return
-    else
-	 envs[from] = envs[from] or create_env()
-	 setfenv(fn, envs[from])
-	 setquota(1) -- set hook
-         jit.off()
-	 local result = {pcall(fn)}
-         jit.on()
-	 debug.sethook() -- unset hook
-	 local success = table.remove(result, 1)
-	 if not success then
-	    local err = result[1]:match(".*: (.-)$")
-	    s:sendChat(target, from .. ": Error running code: " .. code .. ": " .. err)
-	 else
-	    if result[1] == nil then s:sendChat(target, from .. ": nil")
-	    else
-	       for i,v in ipairs(result) do result[i] = tostring(v) end
-	       s:sendChat(target, from .. ": " .. table.concat(result, ", "))
-	    end
-	 end
-    end
-  end
-
 -- clear: wipes user's lua environment
 commands.clear = function(target, from)
   s:sendChat(target, from .. ": Clearing your environment")
@@ -107,7 +78,31 @@ commands.part = function(target, from, arg)
   end
 end
 
+-- sandbox stuff
+local printq = {}
+
+local resetq = function() printq = {} end
+local checkq = function() return #printq > 20 end
+local getq = function(target) 
+   if #printq > 0 then
+      return table.concat(printq, ' ')
+   else
+      return ''
+   end
+end
+
 create_env = function()
+
+   -- override of print for sandbox
+   local newprint = function(...)
+      for n=1,select('#',...) do
+	 if checkq() then break end
+	 local e = select(n,...)
+	 local estr = tostring(e):gsub('\n', '\\n '):sub(1,24)
+	 printq[#printq+1] = estr
+      end
+   end
+
    return {
       s = s,
       co = commands,
@@ -137,9 +132,48 @@ create_env = function()
       math =           math,
       string =         string,
       table =          table,
+      print =          newprint,
    }
 end
 
+-- run some lua code in a sandbox
+commands.eval = function(target, from, code)
+    code = code:gsub("^=", "return ")
+    local fn, err = loadstring(code)
+    if not fn then
+      s:sendChat(target, from .. ": Error loading code: " .. code .. err:match(".*(:.-)$"))
+      return
+    else
+	 envs[from] = envs[from] or create_env()
+	 setfenv(fn, envs[from])
+	 setquota(1) -- set hook
+         jit.off()
+	 local result = {pcall(fn)}
+         jit.on()
+	 debug.sethook() -- unset hook
+	 local success = table.remove(result, 1)
+	 if not success then
+	    local err = result[1]:match(".*: (.-)$")
+	    s:sendChat(target, from .. ": Error running code: " .. code .. ": " .. err)
+	 else
+	    for i=1,#result do
+	       if not result[i] then result[i] = 'nil' end
+	    end
+
+--	    if result[1] == nil then s:sendChat(target, from .. ": nil")
+--	    else
+	       for i,v in ipairs(result) do
+		  result[i] = tostring(v)
+	       end
+	       s:sendChat(target, from .. ": " .. getq() .. " ret: " .. table.concat(result, ", "):gsub('\n', '\\n '))
+--	    end
+	 end
+	 resetq()
+    end
+end
+
+
+-- irc callbacks
 local onraw = function(line)
   print(("%q"):format(line))
 
