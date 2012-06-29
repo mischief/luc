@@ -7,7 +7,7 @@ local info = {
   
   char = ".",
 
-  version = "luc v1.0"
+  version = "luc - https://github.com/mischief/luc"
 }
 
 return info
