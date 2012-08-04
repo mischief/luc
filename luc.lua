@@ -1,16 +1,23 @@
+-- setup path for irc submodule
 package.path = "./deps/?/init.lua;./deps/?.lua;" .. package.path
-print(package.path)
+
+-- should be in deps/
 irc = assert(require "irc", "can't find irc.lua")
+
+-- install luasocket for this
+local sleep = assert(require "socket".sleep, "can't find socket.sleep")
+
+-- luajit is optional
 pcall(function() return require'jit' end)
 
-local sleep = require "socket".sleep
+-- pass a config file as the first argument to the script or use ./config.lua
 local cfg = arg[1] or "config.lua"
-local sleep = assert(require "socket".sleep, "can't find socket.sleep")
 
 local info = assert(dofile(cfg), "can't load '" .. cfg .. "'")
 
+-- calls error() after 'sec'. use to time a pcall.
+-- call setquota(0) when done.
 local function setquota(sec)
---   print("setquota " .. sec)
    if sec == 0 then debug.sethook(); return end
    local st = os.clock()
    function check(wat)
