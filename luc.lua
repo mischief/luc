@@ -1,7 +1,7 @@
 package.path = "./deps/?/init.lua;./deps/?.lua;" .. package.path
 print(package.path)
 irc = assert(require "irc", "can't find irc.lua")
-jit = assert(require "jit", "can't find jit!")
+jit = pcall(function() return require'jit' end)
 
 local sleep = require "socket".sleep
 local cfg = arg[1] or "config.lua"
@@ -22,11 +22,24 @@ local function setquota(sec)
    debug.sethook(check, "", 50000)
 end
 
-local function runcode(code, sec, env)
-   local untrusted, msg = loadstring(code)
-   if not untrusted then return nil, msg end
-   setfenv(untrusted, env)
-   return pcall(untrusted)
+-- sandbox a functional call by limiting its execution time and environment.
+-- does not help with lua code like ("."):rep(10^10).
+local function sandbox(fn, env, sec)
+  local result
+
+  setfenv(fn, env)
+  setquota(sec)
+
+  if jit then jit.off() end
+
+  result = {pcall(fn)}
+
+  if jit then jit.on() end
+
+  -- unset hook
+  setquota(0)
+
+  return result
 end
 
 local envs = {}
@@ -40,20 +53,18 @@ local commands = {}
 -- help: list all irc bot commands
 commands.help = function(target, from)
   local c = {}
-  local i = 1
 
   for k,v in pairs(commands) do
-    c[i] = k
-    i = i + 1
+    c[#c+1] = k
   end
 
-  s:sendChat(target, from .. ": commands: " .. table.concat(c, ", "))
+  s:sendNotice(from, ": commands: " .. table.concat(c, ", "))
 end
 
 -- clear: wipes user's lua environment
 commands.clear = function(target, from)
-  s:sendChat(target, from .. ": Clearing your environment")
   envs[from] = create_env()
+  s:sendNotice(from, "environment cleared")
 end
 
 -- get a fortune
@@ -67,11 +78,11 @@ commands.fortune = function(target, from)
   handle:close()
 end
 
+-- print system uname
 commands.uname = function(t, f)
   local h = io.popen('/usr/bin/env uname -a')
   s:sendChat(t, h:read())
   h:close()
-end
 
   if arg ~= nil then
     s:sendNotice(from, "Joining " .. arg)
@@ -146,40 +157,35 @@ end
 
 -- run some lua code in a sandbox
 commands.eval = function(target, from, code)
-    code = code:gsub("^=", "return ")
-    local fn, err = loadstring(code)
-    if not fn then
-      s:sendChat(target, from .. ": Error loading code: " .. code .. err:match(".*(:.-)$"))
-      return
-    else
-	 envs[from] = envs[from] or create_env()
-	 setfenv(fn, envs[from])
-	 setquota(1) -- set hook
-         jit.off()
-	 local result = {pcall(fn)}
-         jit.on()
-	 debug.sethook() -- unset hook
-	 local success = table.remove(result, 1)
-	 if not success then
-	    local err = result[1]:match(".*: (.-)$")
-	    s:sendChat(target, from .. ": Error running code: " .. code .. ": " .. err)
-	 else
-	    for i=1,#result do
-	       if not result[i] then result[i] = 'nil' end
-	    end
+  code = code:gsub("^=", "return ")
+  local fn, err = loadstring(code)
+  if not fn then
+    s:sendChat(target, from .. ": Error loading code: " .. code .. err:match(".*(:.-)$"))
+    return
+  end
 
---	    if result[1] == nil then s:sendChat(target, from .. ": nil")
---	    else
-	       for i,v in ipairs(result) do
+	envs[from] = envs[from] or create_env()
+
+  local result = sandbox(fn, envs[from], 1)
+	local success = table.remove(result, 1)
+	if not success then
+	  local err = result[1]:match(".*: (.-)$")
+	  s:sendChat(target, from .. ": Error running code: " .. code .. ": " .. err)
+	else
+	  for i=1,#result do
+	    if not result[i] then result[i] = 'nil' end
+	  end
+
+--	if result[1] == nil then s:sendChat(target, from .. ": nil")
+--	else
+	  for i,v in ipairs(result) do
 		  result[i] = tostring(v)
-	       end
-	       s:sendChat(target, from .. ": " .. getq() .. " ret: " .. table.concat(result, ", "):gsub('\n', '\\n '))
---	    end
-	 end
-	 resetq()
-    end
+	  end
+	  s:sendChat(target, from .. ": " .. getq() .. " ret: " .. table.concat(result, ", "):gsub('\n', '\\n '))
+--	end
+	end
+	resetq()
 end
-
 
 -- irc callbacks
 local onraw = function(line)
