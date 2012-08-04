@@ -2,8 +2,9 @@ irc = require "irc"
 jit = require "jit"
 
 local sleep = require "socket".sleep
+local cfg = arg[1] or "config.lua"
 
-local info = assert(dofile("config.lua"), "can't load config.lua")
+local info = assert(dofile(cfg), "can't load '" .. cfg .. "'")
 
 local function setquota(sec)
 --   print("setquota " .. sec)
@@ -207,8 +208,8 @@ end
 s:hook("OnRaw", onraw)
 s:hook("OnChat", onchat)
 
-print('connecting with')
-print(unpack(info))
+print("loading config '" .. cfg .. "'")
+--print(unpack(info))
 
 s:connect(info.server)
 

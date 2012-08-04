@@ -3,6 +3,8 @@ local info = {
   username = "luc",
   realname = "luc",
   server = "irc.hackthissite.org",
+  port = "7000",
+  secure = true,
   channels = { "#bots", "#C++" },
   
   char = ".",
