@@ -1,7 +1,7 @@
 package.path = "./deps/?/init.lua;./deps/?.lua;" .. package.path
 print(package.path)
 irc = assert(require "irc", "can't find irc.lua")
-jit = pcall(function() return require'jit' end)
+pcall(function() return require'jit' end)
 
 local sleep = require "socket".sleep
 local cfg = arg[1] or "config.lua"
