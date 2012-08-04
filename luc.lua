@@ -1,8 +1,11 @@
-irc = require "irc"
-jit = require "jit"
+package.path = "./deps/?/init.lua;./deps/?.lua;" .. package.path
+print(package.path)
+irc = assert(require "irc", "can't find irc.lua")
+jit = assert(require "jit", "can't find jit!")
 
 local sleep = require "socket".sleep
 local cfg = arg[1] or "config.lua"
+local sleep = assert(require "socket".sleep, "can't find socket.sleep")
 
 local info = assert(dofile(cfg), "can't load '" .. cfg .. "'")
 
@@ -64,8 +67,12 @@ commands.fortune = function(target, from)
   handle:close()
 end
 
--- join
-commands.join = function(target, from, arg)
+commands.uname = function(t, f)
+  local h = io.popen('/usr/bin/env uname -a')
+  s:sendChat(t, h:read())
+  h:close()
+end
+
   if arg ~= nil then
     s:sendNotice(from, "Joining " .. arg)
     s:join(arg)
