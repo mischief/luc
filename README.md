@@ -4,7 +4,7 @@ luc: lua irc bot
 check me out
 ------------
 
-    git://github.com/mischief/luc.git
+    git clone git://github.com/mischief/luc.git
 
 fetch my submodules
 -------------------
