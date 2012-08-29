@@ -67,28 +67,6 @@ commands.clear = function(target, from)
   s:sendNotice(from, "environment cleared")
 end
 
--- get a fortune
-commands.fortune = function(target, from)
-  local handle = io.popen('/usr/bin/env fortune -as ')
-  local l = handle:read()
-  while l ~= nil do
-    s:sendChat(target, from .. ": " .. l:gsub('\t', '  '))
-    l = handle:read()
-  end
-  handle:close()
-end
-
--- print system uname
-commands.uname = function(t, f)
-  local h = io.popen('/usr/bin/env uname -a')
-  s:sendChat(t, h:read())
-  h:close()
-
-  if arg ~= nil then
-    s:sendNotice(from, "Joining " .. arg)
-    s:join(arg)
-  end
-end
 -- part
 commands.part = function(target, from, arg)
   if arg ~= nil then
@@ -230,8 +208,13 @@ for k,v in pairs(info.channels) do
   s:join(v)
 end
 
+-- deshicom asterisk support
+asteriskmonit = require"deshicom.asterisk"
+asteriskmonit.init(s)
+
 while true do
+  asteriskmonit.update()
   s:think()
-  sleep(0.5)
+  sleep(0.001)
 end
 

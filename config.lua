@@ -1,15 +1,15 @@
 local info = {
-  nick = "luc",
+  nick = "luczod",
   username = "luc",
   realname = "luc",
-  server = "chat.freenode.net",
-  port = "7000",
-  secure = true,
-  channels = { "#noisebridge" },
+  server = "packetfire.org",
+  port = "6667",
+  secure = false,
+  channels = { "#deshicom" },
 
   char = ".",
 
-  version = "luc - https://github.com/mischief/luc"
+  version = "luc - https://github.com/mischief/luc",
 }
 
 return info
