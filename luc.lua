@@ -91,8 +91,11 @@ commands.uname = function(t, f)
   s:sendChat(t, h:read())
   h:close()
 
+end
+
+commands.join = function(t, f, arg)
   if arg ~= nil then
-    s:sendNotice(from, "Joining " .. arg)
+    s:sendNotice(f, "Joining " .. arg)
     s:join(arg)
   end
 end
@@ -136,7 +139,8 @@ create_env = function()
       assert =         assert,
       collectgarbage = collectgarbage,
       error =          error,
-      getfenv =        getfenv,
+-- UNSAFE.
+--    getfenv =        getfenv,
       getmetatable =   getmetatable,
       ipairs =         ipairs,
       loadstring =     loadstring,
