@@ -230,6 +230,20 @@ for k,v in pairs(info.channels) do
   s:join(v)
 end
 
+a = require 'adventure'
+
+local sendAdventure = function(target, str)
+  s:sendChat(target, str)
+end
+
+a.init(s, sendAdventure)
+
+commands.a = function(target, from, msg)
+  a.loop()
+  a.write(msg)
+  a.loop()
+end
+
 while true do
   s:think()
   sleep(0.5)

@@ -1,11 +1,11 @@
 local info = {
-  nick = "luc",
+  nick = "adventurebot",
   username = "luc",
   realname = "luc",
   server = "chat.freenode.net",
   port = "7000",
   secure = true,
-  channels = { "#noisebridge" },
+  channels = { "#adventure" },
 
   char = ".",
 
