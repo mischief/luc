@@ -205,7 +205,7 @@ local onchat = function(user, chan, msg)
 
   print(("[%s] %s: %s"):format(chan,user.nick,msg))
 
-  msg = msg:gsub("^" .. info.nick .. "[:,>] ", "!eval ")
+  msg = msg:gsub("^" .. info.nick .. "[:,>] ", info.char .. "a ")
 
   local is_cmd, cmd, arg = msg:match("^(%" .. info.char .. ")([%w_]+) ?(.-)$")
 
@@ -246,6 +246,6 @@ end
 
 while true do
   s:think()
-  sleep(0.5)
+  sleep(0.1)
 end
 
